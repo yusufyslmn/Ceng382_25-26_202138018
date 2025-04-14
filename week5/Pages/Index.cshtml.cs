@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using week5.Models;
+using week5.Helpers;
+using System.Linq;
 
 namespace week5.Pages
 {
@@ -19,29 +21,35 @@ namespace week5.Pages
         public int TotalPages { get; set; }
 
         [BindProperty]
-        public ClassInformationModel ClassInfo { get; set; } = new ClassInformationModel
-        {
-            ClassName = string.Empty,
-            Description = string.Empty,
-            StudentCount = 0
-        };
+        public ClassInformationModel ClassInfo { get; set; } = new ClassInformationModel();
 
         [BindProperty]
         public int? EditId { get; set; }
 
+        public List<int> FilteredClassIds { get; set; } = new List<int>();
+
         public void OnGet()
         {
-            
+            string[] classNames = { "MIS", "CENG", "SENG", "MAN" };
+            string[] descriptions = { "Management Information Systems", "Computer Engineering", "Software Engineering", "Management" };
+
             if (!Classes.Any())
             {
+                Random random = new Random();
+
                 for (int i = 1; i <= 100; i++)
                 {
+                    string className = classNames[random.Next(classNames.Length)];
+                    int courseCode = random.Next(101, 405);
+                    string fullClassName = $"{className} {courseCode}";
+                    string classDescription = descriptions[Array.IndexOf(classNames, className)] + $" {courseCode}";
+
                     Classes.Add(new ClassInformationModel
                     {
                         Id = i,
-                        ClassName = $"Class {i}",
-                        Description = $"This is the description for class {i}.",
-                        StudentCount = i * 2
+                        ClassName = fullClassName,
+                        Description = classDescription,
+                        StudentCount = random.Next(20, 100)
                     });
                 }
             }
@@ -54,6 +62,7 @@ namespace week5.Pages
             }
 
             query = query.Where(c => c.StudentCount > 0);
+            FilteredClassIds = query.Select(c => c.Id).ToList();
 
             int totalItems = query.Count();
             TotalPages = (int)Math.Ceiling(totalItems / (double)PageSize);
@@ -72,18 +81,25 @@ namespace week5.Pages
 
             FilteredClasses = paginated;
         }
-        
-        public IActionResult OnPostDelete(int id)
-        {
-            var item = Classes.FirstOrDefault(c => c.Id == id);
-            if (item != null)
-                Classes.Remove(item);
 
-            return RedirectToPage(new { FilterClassName, CurrentPage });
+        public IActionResult OnGetEdit(int id)
+        {
+            var classToEdit = Classes.FirstOrDefault(c => c.Id == id);
+            if (classToEdit != null)
+            {
+                ClassInfo = classToEdit;
+                EditId = id;
+            }
+
+            OnGet();
+            return Page();
         }
 
         public IActionResult OnPost()
         {
+            if (!ModelState.IsValid)
+                return Page();
+
             if (EditId.HasValue)
             {
                 var existing = Classes.FirstOrDefault(c => c.Id == EditId.Value);
@@ -101,25 +117,82 @@ namespace week5.Pages
                 Classes.Add(ClassInfo);
             }
 
-            return RedirectToPage("Index", new { FilterClassName, CurrentPage });
+            return RedirectToPage("./Index");
         }
 
-        public void OnGetEdit(int id)
+        public IActionResult OnPostDelete(int id)
         {
-            var classToEdit = Classes.FirstOrDefault(c => c.Id == id);
-            if (classToEdit != null)
+            var item = Classes.FirstOrDefault(c => c.Id == id);
+            if (item != null)
             {
-                ClassInfo = new ClassInformationModel
+                Classes.Remove(item);
+            }
+            return RedirectToPage("./Index");
+        }
+
+        public IActionResult OnGetExportJson(bool isFiltered, string selectedColumns, string? filterClassName)
+        {
+            var columnList = (selectedColumns ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(c => c.Trim())
+                .ToList();
+
+            List<ClassInformationModel> exportData;
+
+            if (isFiltered)
+            {
+                var query = Classes.AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(filterClassName))
                 {
-                    Id = classToEdit.Id,
-                    ClassName = classToEdit.ClassName,
-                    Description = classToEdit.Description,
-                    StudentCount = classToEdit.StudentCount
-                };
-                EditId = classToEdit.Id;
+                    query = query.Where(c => c.ClassName.Contains(filterClassName, StringComparison.OrdinalIgnoreCase));
+                }
+
+                query = query.Where(c => c.StudentCount > 0);
+                exportData = query.ToList();
+            }
+            else
+            {
+                exportData = Classes;
             }
 
-            OnGet();
+            string json = Utils.Instance.SerializeToJson(exportData, columnList);
+
+            return File(System.Text.Encoding.UTF8.GetBytes(json), "application/json", "export.json");
+        }
+
+        public List<object> GetPaginationPages()
+        {
+            var pages = new List<object>();
+
+            if (TotalPages <= 5)
+            {
+                for (int i = 1; i <= TotalPages; i++)
+                    pages.Add(i);
+                return pages;
+            }
+
+            pages.Add(1);
+
+            if (CurrentPage > 3)
+                pages.Add("...");
+
+            int start = Math.Max(2, CurrentPage - 2);
+            int end = Math.Min(TotalPages - 1, CurrentPage + 2);
+
+            for (int i = start; i <= end; i++)
+            {
+                if (!pages.Contains(i))
+                    pages.Add(i);
+            }
+
+            if (CurrentPage + 2 < TotalPages - 1)
+                pages.Add("...");
+
+            if (!pages.Contains(TotalPages))
+                pages.Add(TotalPages);
+
+            return pages;
         }
     }
 }

@@ -1,10 +1,10 @@
 namespace week5.Models
 {
-    public class ClassInformationModel
+    public class ClassInformationTable
     {
         public int Id { get; set; }
-        public required string ClassName { get; set; }
-        public required string Description { get; set; }
+        public string ClassName { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public int StudentCount { get; set; }
     }
 }
