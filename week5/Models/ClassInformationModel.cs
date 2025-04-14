@@ -1,0 +1,15 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace week5.Models {
+    public class ClassInformationModel {
+        public int Id { get; set; }
+
+        [Required]
+        public string ClassName { get; set; }
+
+        [Required]
+        public int StudentCount { get; set; }
+
+        public string Description { get; set; }
+    }
+}

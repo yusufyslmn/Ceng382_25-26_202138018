@@ -1,0 +1,76 @@
+﻿@page
+@model week5.Pages.IndexModel
+@{
+    ViewData["Title"] = "Class Info";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-5">
+            <h3>@(Model.NewClass.Id == 0 ? "Add New Class" : "Edit Class")</h3>
+            <form method="post">
+                <input type="hidden" asp-for="NewClass.Id" />
+
+                <div class="mb-3">
+                    <label class="form-label">Class Name</label>
+                    <input asp-for="NewClass.ClassName" class="form-control" />
+                    <span asp-validation-for="NewClass.ClassName" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Student Count</label>
+                    <input asp-for="NewClass.StudentCount" class="form-control" />
+                    <span asp-validation-for="NewClass.StudentCount" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea asp-for="NewClass.Description" class="form-control"></textarea>
+                </div>
+
+                @if (Model.NewClass.Id == 0)
+                {
+                    <button type="submit" class="btn btn-primary" asp-page-handler="Add">Add Class</button>
+                }
+                else
+                {
+                    <button type="submit" class="btn btn-warning" asp-page-handler="Update">Update Class</button>
+                }
+            </form>
+        </div>
+
+        <div class="col-md-7">
+            <h3>Class List</h3>
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Class Name</th>
+                        <th>Student Count</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in IndexModel.ClassList)
+                    {
+                        <tr>
+                            <td>@item.Id</td>
+                            <td>@item.ClassName</td>
+                            <td>@item.StudentCount</td>
+                            <td>@item.Description</td>
+                            <td>
+                                <form method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <button type="submit" class="btn btn-danger btn-sm" asp-page-handler="Delete">Delete</button>
+                                </form>
+                                <form method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <button type="submit" class="btn btn-secondary btn-sm" asp-page-handler="Edit">Edit</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
