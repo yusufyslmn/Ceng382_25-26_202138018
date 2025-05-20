@@ -1,0 +1,13 @@
+@page
+@model Week8LoginProject.Pages.TableModel
+@{
+    ViewData["Title"] = "Table Page";
+}
+
+<h2>Welcome, @Model.Username!</h2>
+
+<p>You have successfully logged in.</p>
+
+<form method="post" asp-page="/Logout">
+    <button type="submit">Logout</button>
+</form>
