@@ -9,7 +9,6 @@ namespace Week8LoginProject.Pages
 
         public IActionResult OnGet()
         {
-            // Session ve Cookie kontrolü
             var sessionUsername = HttpContext.Session.GetString("username");
             var sessionToken = HttpContext.Session.GetString("token");
             var sessionId = HttpContext.Session.GetString("session_id");
@@ -22,7 +21,7 @@ namespace Week8LoginProject.Pages
                 || string.IsNullOrEmpty(cookieUsername) || string.IsNullOrEmpty(cookieToken) || string.IsNullOrEmpty(cookieSessionId)
                 || sessionUsername != cookieUsername || sessionToken != cookieToken || sessionId != cookieSessionId)
             {
-                TempData["ErrorMessage"] = "You must log in to access this page.";
+                TempData["ErrorMessage"] = "Session expired or invalid login. Please log in again.";
                 return RedirectToPage("/Login");
             }
 
